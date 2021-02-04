@@ -1,0 +1,7 @@
+apiVersion: ldap.digitalis.io/v1
+kind: LdapUserAccount
+metadata:
+  name: ldapuseraccount-sample
+spec:
+  # Add fields here
+  foo: bar
