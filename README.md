@@ -51,3 +51,7 @@ and after this you can deploy it with
 ```sh
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
+
+## Sample
+
+![OpenLDAP Controller](openldap_controller.gif)
