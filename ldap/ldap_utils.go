@@ -27,8 +27,7 @@ import (
 )
 
 var (
-	ldapFilter string = getEnv("LDAP_FILTER", "(objectClass=*)")
-	baseDN     string = getEnv("LDAP_BASE_DN", "dc=axonops,dc=com")
+	ldapBaseDN string = getEnv("LDAP_BASE_DN", "dc=digitalis,dc=io")
 )
 
 func getEnv(key string, def string) string {
@@ -36,10 +35,7 @@ func getEnv(key string, def string) string {
 	if !ok {
 		fmt.Printf("%s not set\n", key)
 		return def
-	} else {
-		fmt.Printf("%s=%s\n", key, val)
 	}
-
 	return val
 }
 
@@ -63,14 +59,13 @@ func LdapConnect() (*ldap.Conn, error) {
 	} else {
 		conn, err = ldap.Dial("tcp", fmt.Sprintf("%s:%s", ldapHostname, ldapPort))
 	}
-	conn.Debug = true
+	//conn.Debug = true
 	if err != nil {
 		return nil, err
 	}
 	if err := conn.Bind(ldapBind, ldapPassword); err != nil {
 		return nil, fmt.Errorf("Failed to bind. %s", err)
 	}
-	//defer conn.Close()
 
 	return conn, nil
 }
@@ -81,35 +76,31 @@ func LdapGet(key string, value string) (ldapv1.LdapUserSpec, error) {
 	if err != nil {
 		return ldapv1.LdapUserSpec{}, fmt.Errorf("Could not connect to ldap server %s", err)
 	}
-	result, err := conn.Search(ldap.NewSearchRequest(
-		baseDN,
-		ldap.ScopeWholeSubtree,
-		ldap.NeverDerefAliases,
-		0,
-		0,
-		false,
-		fmt.Sprintf("%s=%s", key, value),
-		[]string{},
-		nil,
-	))
+	// conn.Debug = true
+	search := ldap.NewSearchRequest(
+		ldapBaseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(%s=%s)", key, value),
+		[]string{"uid", "cn", "gidNumber", "uidNumber", "homeDirectory", "loginShell"},
+		nil)
+
+	result, err := conn.Search(search)
 
 	if err != nil {
 		return ldapv1.LdapUserSpec{}, fmt.Errorf("Failed to search users. %s", err)
 	}
-	for _, entry := range result.Entries {
-		fmt.Println(entry)
-	}
+
 	// not found
 	if len(result.Entries) < 1 {
 		return ldapv1.LdapUserSpec{}, nil
 	}
 
-	if key == "username" {
+	if key == "uid" {
 		var userAccount = ldapv1.LdapUserSpec{
 			Username: result.Entries[0].GetAttributeValue("uid"),
 			GID:      result.Entries[0].GetAttributeValue("uidNumber"),
 			UID:      result.Entries[0].GetAttributeValue("gidNumber"),
-			Shell:    result.Entries[0].GetAttributeValue("shell"),
+			Shell:    result.Entries[0].GetAttributeValue("loginShell"),
 			Homedir:  result.Entries[0].GetAttributeValue("homeDirectory"),
 		}
 		return userAccount, nil
@@ -119,17 +110,21 @@ func LdapGet(key string, value string) (ldapv1.LdapUserSpec, error) {
 
 func LdapDeleteUser(user ldapv1.LdapUserSpec) error {
 	if user.Username == "" {
-		fmt.Println("User not found")
 		return nil
 	}
+	// not found, ignore
+	x, err := LdapGet("uid", user.Username)
+	if x.Username == "" {
+		return nil
+	}
+
 	conn, err := LdapConnect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
 
-	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, baseDN)
+	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, ldapBaseDN)
 	delReq := ldap.NewDelRequest(dn, []ldap.Control{})
-	fmt.Printf("%v\n", delReq)
 	if err := conn.Del(delReq); err != nil {
 		return err
 	}
@@ -137,13 +132,28 @@ func LdapDeleteUser(user ldapv1.LdapUserSpec) error {
 	return nil
 }
 
+// func LdapModifyUser(user ldapv1.LdapUserSpec) error {
+// 	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, ldapBaseDN)
+// 	modifyRequest := ldap.NewModifyRequest(dn)
+
+// 	return nil
+// }
+
 func LdapAddUser(user ldapv1.LdapUserSpec) error {
 	conn, err := LdapConnect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
+	x, err := LdapGet("uid", user.Username)
+	if x.Username != "" {
+		// return LdapModifyUser(user)
+		err := LdapDeleteUser(user)
+		if err != nil {
+			return err
+		}
+	}
 
-	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, baseDN)
+	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, ldapBaseDN)
 	addReq := ldap.NewAddRequest(dn, []ldap.Control{})
 
 	addReq.Attribute("objectClass",
@@ -158,7 +168,6 @@ func LdapAddUser(user ldapv1.LdapUserSpec) error {
 	addReq.Attribute("userPassword", []string{user.Password})
 	addReq.Attribute("loginShell", []string{user.Shell})
 
-	fmt.Printf("%v\n", addReq)
 	if err := conn.Add(addReq); err != nil {
 		return err
 	}
