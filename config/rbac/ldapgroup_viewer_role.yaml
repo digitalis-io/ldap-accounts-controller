@@ -1,0 +1,20 @@
+# permissions for end users to view ldapgroups.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ldapgroup-viewer-role
+rules:
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapgroups
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapgroups/status
+  verbs:
+  - get

@@ -1,0 +1,7 @@
+apiVersion: ldap.digitalis.io/v1
+kind: LdapGroup
+metadata:
+  name: ldapgroup-sample
+spec:
+  # Add fields here
+  foo: bar

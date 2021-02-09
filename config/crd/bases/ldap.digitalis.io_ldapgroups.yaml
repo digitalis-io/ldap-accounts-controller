@@ -1,0 +1,68 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: ldapgroups.ldap.digitalis.io
+spec:
+  group: ldap.digitalis.io
+  names:
+    kind: LdapGroup
+    listKind: LdapGroupList
+    plural: ldapgroups
+    singular: ldapgroup
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: LdapGroup is the Schema for the ldapgroups API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: LdapGroupSpec defines the desired state of LdapGroup
+          properties:
+            gid:
+              type: integer
+            members:
+              items:
+                type: string
+              type: array
+            name:
+              type: string
+          required:
+          - gid
+          - name
+          type: object
+        status:
+          description: LdapGroupStatus defines the observed state of LdapGroup
+          properties:
+            createdOn:
+              type: string
+            updatedOn:
+              type: string
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

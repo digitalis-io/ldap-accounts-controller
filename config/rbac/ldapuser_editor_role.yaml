@@ -1,0 +1,24 @@
+# permissions for end users to edit ldapusers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ldapuser-editor-role
+rules:
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapusers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapusers/status
+  verbs:
+  - get

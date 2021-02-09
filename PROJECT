@@ -1,0 +1,10 @@
+domain: digitalis.io
+repo: ldap-accounts-controller
+resources:
+- group: ldap
+  kind: LdapGroup
+  version: v1
+- group: ldap
+  kind: LdapUser
+  version: v1
+version: "2"

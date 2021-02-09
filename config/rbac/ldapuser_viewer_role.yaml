@@ -1,0 +1,20 @@
+# permissions for end users to view ldapusers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ldapuser-viewer-role
+rules:
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapusers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ldap.digitalis.io
+  resources:
+  - ldapusers/status
+  verbs:
+  - get

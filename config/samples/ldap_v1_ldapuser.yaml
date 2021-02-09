@@ -1,0 +1,12 @@
+apiVersion: ldap.digitalis.io/v1
+kind: LdapUser
+metadata:
+  name: user01
+spec:
+  username: user01
+  password: letmein
+  gid: "1000"
+  uid: "1000"
+  homedir: /home/user01
+  shell: /bin/bash
+
