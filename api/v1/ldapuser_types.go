@@ -23,41 +23,42 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LdapUserAccountSpec defines the desired state of LdapUserAccount
-type LdapUserAccountSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
-
+// LdapUserSpec defines the desired state of LdapUser
+type LdapUserSpec struct {
 	Username string `json:"username"`
-	Uid      string `json:"uid"`
+	UID      string `json:"uid"`
+	GID      string `json:"gid"`
 	Password string `json:"password"`
+	Homedir  string `json:"homedir,omitempty"`
+	Shell    string `json:"shell,omitempty"`
 }
 
-// LdapUserAccountStatus defines the observed state of LdapUserAccount
-type LdapUserAccountStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// LdapUserStatus defines the observed state of LdapUser
+type LdapUserStatus struct {
+	CreatedOn string `json:"createdOn,omitempty"`
+	UpdatedOn string `json:"updatedOn,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// LdapUserAccount is the Schema for the ldapuseraccounts API
-type LdapUserAccount struct {
+// LdapUser is the Schema for the ldapusers API
+type LdapUser struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LdapUserAccountSpec   `json:"spec,omitempty"`
-	Status LdapUserAccountStatus `json:"status,omitempty"`
+	Spec   LdapUserSpec   `json:"spec,omitempty"`
+	Status LdapUserStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// LdapUserAccountList contains a list of LdapUserAccount
-type LdapUserAccountList struct {
+// LdapUserList contains a list of LdapUser
+type LdapUserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LdapUserAccount `json:"items"`
+	Items           []LdapUser `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LdapUserAccount{}, &LdapUserAccountList{})
+	SchemeBuilder.Register(&LdapUser{}, &LdapUserList{})
 }

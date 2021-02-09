@@ -66,12 +66,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.LdapUserAccountReconciler{
+	if err = (&controllers.LdapGroupReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("LdapUserAccount"),
+		Log:    ctrl.Log.WithName("controllers").WithName("LdapGroup"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "LdapUserAccount")
+		setupLog.Error(err, "unable to create controller", "controller", "LdapGroup")
+		os.Exit(1)
+	}
+	if err = (&controllers.LdapUserReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("LdapUser"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LdapUser")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

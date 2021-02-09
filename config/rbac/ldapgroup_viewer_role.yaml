@@ -1,13 +1,13 @@
-# permissions for end users to view ldapuseraccounts.
+# permissions for end users to view ldapgroups.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ldapuseraccount-viewer-role
+  name: ldapgroup-viewer-role
 rules:
 - apiGroups:
   - ldap.digitalis.io
   resources:
-  - ldapuseraccounts
+  - ldapgroups
   verbs:
   - get
   - list
@@ -15,6 +15,6 @@ rules:
 - apiGroups:
   - ldap.digitalis.io
   resources:
-  - ldapuseraccounts/status
+  - ldapgroups/status
   verbs:
   - get

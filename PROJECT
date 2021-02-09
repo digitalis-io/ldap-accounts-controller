@@ -2,6 +2,9 @@ domain: digitalis.io
 repo: ldap-accounts-controller
 resources:
 - group: ldap
-  kind: LdapUserAccount
+  kind: LdapGroup
+  version: v1
+- group: ldap
+  kind: LdapUser
   version: v1
 version: "2"
