@@ -25,15 +25,16 @@ spec:
 You can run it from command line using something like:
 
 ```sh
-LDAP_BASE_DN="dc=axonops,dc=com" \
-LDAP_BIND="cn=admin,dc=axonops,dc=com" \
+LDAP_BASE_DN="dc=digitalis,dc=io" \
+LDAP_BIND="cn=admin,dc=digitalis,dc=io" \
 LDAP_PASSWORD=xxxx \
-LDAP_HOSTNAME=192.168.1.xx \
-LDAP_PORT=30947 \
+LDAP_HOSTNAME=ldap_server_ip_or_host \
+LDAP_PORT=389 \
+LDAP_TLS="false" \
 make install run
 ```
 
-Or check out [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) docs on creating your own docker image to use inside kubernetes:
+Or check out [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) docs on creating your own docker image to use inside kubernetes or which you can see an extract in the section below:
 
 https://book.kubebuilder.io/quick-start.html#run-it-on-the-cluster
 
