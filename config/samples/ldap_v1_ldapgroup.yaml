@@ -3,5 +3,8 @@ kind: LdapGroup
 metadata:
   name: ldapgroup-sample
 spec:
-  # Add fields here
-  foo: bar
+  name: devops
+  gid: "1000"
+  members:
+    - user01
+    - "90000"

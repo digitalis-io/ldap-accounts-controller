@@ -26,8 +26,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	ldapv1 "ldap-accounts-controller/api/v1"
+	ld "ldap-accounts-controller/ldap"
 )
 
 // LdapGroupReconciler reconciles a LdapGroup object
@@ -58,6 +61,44 @@ func (r *LdapGroupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		log.Error(err, "unable to fetch ldap group")
 		return ctrl.Result{}, err
 	}
+
+	//! [finalizer]
+	ldapgroupFinalizerName := "ldap.digitalis.io/finalizer"
+	if ldapgroup.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !containsString(ldapgroup.GetFinalizers(), ldapgroupFinalizerName) {
+			ldapgroup.SetFinalizers(append(ldapgroup.GetFinalizers(), ldapgroupFinalizerName))
+			if err := r.Update(context.Background(), &ldapgroup); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		if containsString(ldapgroup.GetFinalizers(), ldapgroupFinalizerName) {
+			// our finalizer is present, so lets handle any external dependency
+			if err := ld.LdapDeleteGroup(ldapgroup.Spec); err != nil {
+				log.Error(err, "Error deleting from LDAP")
+				return ctrl.Result{}, err
+			}
+
+			// remove our finalizer from the list and update it.
+			ldapgroup.SetFinalizers(removeString(ldapgroup.GetFinalizers(), ldapgroupFinalizerName))
+			if err := r.Update(context.Background(), &ldapgroup); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return ctrl.Result{}, nil
+	}
+	//! [finalizer]
+
+	log.Info("Adding or updating LDAP group")
+	err := ld.LdapAddGroup(ldapgroup.Spec)
+	if err != nil {
+		log.Error(err, "cannot add group to ldap")
+	}
+	ldapgroup.Status.CreatedOn = time.Now().Format("2006-01-02 15:04:05")
+
 	var ldapGroups ldapv1.LdapGroupList
 	if err := r.List(ctx, &ldapGroups, client.InNamespace(req.Namespace), client.MatchingFields{ldapGroupOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list ldap accounts")
@@ -80,7 +121,24 @@ func (r *LdapGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}); err != nil {
 		return err
 	}
+	//! [pred]
+	pred := predicate.Funcs{
+		CreateFunc:  func(event.CreateEvent) bool { return true },
+		DeleteFunc:  func(event.DeleteEvent) bool { return false },
+		GenericFunc: func(event.GenericEvent) bool { return true },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldGeneration := e.MetaOld.GetGeneration()
+			newGeneration := e.MetaNew.GetGeneration()
+			// Generation is only updated on spec changes (also on deletion),
+			// not metadata or status
+			// Filter out events where the generation hasn't changed to
+			// avoid being triggered by status updates
+			return oldGeneration != newGeneration
+		},
+	}
+	//! [pred]
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ldapv1.LdapGroup{}).
+		WithEventFilter(pred).
 		Complete(r)
 }

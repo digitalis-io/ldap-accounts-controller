@@ -35,7 +35,7 @@ spec:
           description: LdapGroupSpec defines the desired state of LdapGroup
           properties:
             gid:
-              type: integer
+              type: string
             members:
               items:
                 type: string

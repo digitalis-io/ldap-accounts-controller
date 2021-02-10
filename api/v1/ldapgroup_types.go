@@ -26,7 +26,7 @@ import (
 // LdapGroupSpec defines the desired state of LdapGroup
 type LdapGroupSpec struct {
 	Name    string   `json:"name"`
-	GID     int      `json:"gid"`
+	GID     string   `json:"gid"`
 	Members []string `json:"members,omitempty"`
 }
 
