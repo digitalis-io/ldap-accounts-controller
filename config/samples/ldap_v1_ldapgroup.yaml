@@ -1,7 +1,7 @@
 apiVersion: ldap.digitalis.io/v1
 kind: LdapGroup
 metadata:
-  name: ldapgroup-sample
+  name: devops
 spec:
   name: devops
   gid: "1000"

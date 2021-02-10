@@ -132,11 +132,10 @@ func LdapGetGroup(value string) (ldapv1.LdapGroupSpec, error) {
 		return ldapv1.LdapGroupSpec{}, nil
 	}
 
-	fmt.Printf("%v\n", result.Entries[0])
 	var group = ldapv1.LdapGroupSpec{
-		Name: result.Entries[0].GetAttributeValue("cn"),
-		GID:  result.Entries[0].GetAttributeValue("uidNumber"),
-		//Members: result.Entries[0].GetAttributeValue("members"),
+		Name:    result.Entries[0].GetAttributeValue("cn"),
+		GID:     result.Entries[0].GetAttributeValue("uidNumber"),
+		Members: result.Entries[0].GetAttributeValues("memberUid"),
 	}
 	return group, nil
 
