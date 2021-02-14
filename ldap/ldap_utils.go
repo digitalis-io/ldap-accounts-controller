@@ -19,6 +19,7 @@ package ldap
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 
@@ -40,20 +41,49 @@ func getEnv(key string, def string) string {
 	return val
 }
 
-func LdapConnect() (*ldap.Conn, error) {
+// Connect connects to a LDAP server
+func Connect() (*ldap.Conn, error) {
 	ldapHostname := getEnv("LDAP_HOSTNAME", "localhost")
 	ldapPort := getEnv("LDAP_PORT", "389")
 	ldapBind := getEnv("LDAP_BIND", "cn=admin")
 	ldapPassword := getEnv("LDAP_PASSWORD", "letmein")
-	ldapTls := getEnv("LDAP_TLS", "false")
+	ldapTLS := getEnv("LDAP_TLS", "false")
+	ldapTLSCa := getEnv("LDAP_TLS_CA", "")
+	ldapTLSCert := getEnv("LDAP_TLS_CERT", "")
+	ldapTLSKey := getEnv("LDAP_TLS_KEY", "")
+	ldapTLSInsecure := getEnv("LDAP_TLS_INSECURE", "false")
 
 	var conn *ldap.Conn
 	var err error
-	if ldapTls == "true" {
+	if ldapTLS == "true" {
+		insecureTLS, err := strconv.ParseBool(ldapTLSInsecure)
+		if err != nil {
+			return nil, err
+		}
 		tlsConfig := tls.Config{
-			InsecureSkipVerify: true,
-			// ServerName: "the-target-server-of-ad",
+			InsecureSkipVerify: insecureTLS,
+			ServerName:         ldapHostname,
 			// RootCAs:    rootCA,
+		}
+
+		if ldapTLSCert != "" && ldapTLSKey != "" {
+			ldapTLSCertData, err := ioutil.ReadFile(ldapTLSCert)
+			if err != nil {
+				return nil, err
+			}
+			ldapTLSKeyData, err := ioutil.ReadFile(ldapTLSKey)
+			if err != nil {
+				return nil, err
+			}
+
+			cert, err := tls.X509KeyPair(ldapTLSCertData, ldapTLSKeyData)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
+		if ldapTLSCa != "" {
+			// TODO
 		}
 
 		conn, err = ldap.DialTLS("tcp", fmt.Sprintf("%s:%s", ldapHostname, ldapPort), &tlsConfig)
@@ -71,9 +101,9 @@ func LdapConnect() (*ldap.Conn, error) {
 	return conn, nil
 }
 
-// LdapGet find a user from ldap server
-func LdapGetUser(value string) (ldapv1.LdapUserSpec, error) {
-	conn, err := LdapConnect()
+// Get find a user from ldap server
+func GetUser(value string) (ldapv1.LdapUserSpec, error) {
+	conn, err := Connect()
 	if err != nil {
 		return ldapv1.LdapUserSpec{}, fmt.Errorf("Could not connect to ldap server %s", err)
 	}
@@ -107,9 +137,9 @@ func LdapGetUser(value string) (ldapv1.LdapUserSpec, error) {
 
 }
 
-// LdapGet find a group from ldap server
-func LdapGetGroup(value string) (ldapv1.LdapGroupSpec, error) {
-	conn, err := LdapConnect()
+// Get find a group from ldap server
+func GetGroup(value string) (ldapv1.LdapGroupSpec, error) {
+	conn, err := Connect()
 	if err != nil {
 		return ldapv1.LdapGroupSpec{}, fmt.Errorf("Could not connect to ldap server %s", err)
 	}
@@ -141,17 +171,17 @@ func LdapGetGroup(value string) (ldapv1.LdapGroupSpec, error) {
 
 }
 
-func LdapDeleteUser(user ldapv1.LdapUserSpec) error {
+func DeleteUser(user ldapv1.LdapUserSpec) error {
 	if user.Username == "" {
 		return nil
 	}
 	// not found, ignore
-	x, err := LdapGetUser(user.Username)
+	x, err := GetUser(user.Username)
 	if x.Username == "" {
 		return nil
 	}
 
-	conn, err := LdapConnect()
+	conn, err := Connect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
@@ -165,14 +195,14 @@ func LdapDeleteUser(user ldapv1.LdapUserSpec) error {
 	return nil
 }
 
-func LdapDeleteGroup(group ldapv1.LdapGroupSpec) error {
+func DeleteGroup(group ldapv1.LdapGroupSpec) error {
 	// not found, ignore
-	x, err := LdapGetGroup(group.Name)
+	x, err := GetGroup(group.Name)
 	if x.Name == "" {
 		return nil
 	}
 
-	conn, err := LdapConnect()
+	conn, err := Connect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
@@ -186,22 +216,22 @@ func LdapDeleteGroup(group ldapv1.LdapGroupSpec) error {
 	return nil
 }
 
-// func LdapModifyUser(user ldapv1.LdapUserSpec) error {
+// func ModifyUser(user ldapv1.LdapUserSpec) error {
 // 	dn := fmt.Sprintf("uid=%s,ou=People,%s", user.Username, ldapBaseDN)
 // 	modifyRequest := ldap.NewModifyRequest(dn)
 
 // 	return nil
 // }
 
-func LdapAddUser(user ldapv1.LdapUserSpec) error {
-	conn, err := LdapConnect()
+func AddUser(user ldapv1.LdapUserSpec) error {
+	conn, err := Connect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
-	x, err := LdapGetUser(user.Username)
+	x, err := GetUser(user.Username)
 	if x.Username != "" {
 		// return LdapModifyUser(user)
-		err := LdapDeleteUser(user)
+		err := DeleteUser(user)
 		if err != nil {
 			return err
 		}
@@ -244,7 +274,7 @@ func ldapGroupMembers(group ldapv1.LdapGroupSpec) ([]string, error) {
 		if isNumber(group.Members[m]) {
 			members = append(members, group.Members[m])
 		} else {
-			x, err := LdapGetUser(group.Members[m])
+			x, err := GetUser(group.Members[m])
 			if err != nil {
 				return members, err
 			}
@@ -254,14 +284,14 @@ func ldapGroupMembers(group ldapv1.LdapGroupSpec) ([]string, error) {
 	return members, nil
 }
 
-func LdapAddGroup(group ldapv1.LdapGroupSpec) error {
-	conn, err := LdapConnect()
+func AddGroup(group ldapv1.LdapGroupSpec) error {
+	conn, err := Connect()
 	if err != nil {
 		return fmt.Errorf("Could not connect to ldap server %s", err)
 	}
-	x, err := LdapGetGroup(group.Name)
+	x, err := GetGroup(group.Name)
 	if x.Name != "" {
-		err := LdapDeleteGroup(group)
+		err := DeleteGroup(group)
 		if err != nil {
 			return err
 		}

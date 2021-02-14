@@ -75,7 +75,7 @@ func (r *LdapGroupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// The object is being deleted
 		if containsString(ldapgroup.GetFinalizers(), ldapgroupFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
-			if err := ld.LdapDeleteGroup(ldapgroup.Spec); err != nil {
+			if err := ld.DeleteGroup(ldapgroup.Spec); err != nil {
 				log.Error(err, "Error deleting from LDAP")
 				return ctrl.Result{}, err
 			}
@@ -93,7 +93,7 @@ func (r *LdapGroupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	//! [finalizer]
 
 	log.Info("Adding or updating LDAP group")
-	err := ld.LdapAddGroup(ldapgroup.Spec)
+	err := ld.AddGroup(ldapgroup.Spec)
 	if err != nil {
 		log.Error(err, "cannot add group to ldap")
 	}

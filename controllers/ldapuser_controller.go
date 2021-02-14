@@ -69,7 +69,7 @@ func (r *LdapUserReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// The object is being deleted
 		if containsString(ldapuser.GetFinalizers(), ldapuserFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
-			if err := ld.LdapDeleteUser(ldapuser.Spec); err != nil {
+			if err := ld.DeleteUser(ldapuser.Spec); err != nil {
 				log.Error(err, "Error deleting from LDAP")
 				return ctrl.Result{}, err
 			}
@@ -87,7 +87,7 @@ func (r *LdapUserReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	//! [finalizer]
 
 	log.Info("Adding or updating LDAP user")
-	err := ld.LdapAddUser(ldapuser.Spec)
+	err := ld.AddUser(ldapuser.Spec)
 	if err != nil {
 		log.Error(err, "cannot add user to ldap")
 	}

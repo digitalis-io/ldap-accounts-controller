@@ -33,8 +33,15 @@ LDAP_PORT=389 \
 LDAP_TLS="false" \
 make install run
 ```
+Optinally you can also add the patch for SSL cert and key with
 
-Or check out [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) docs on creating your own docker image to use inside kubernetes or which you can see an extract in the section below:
+```sh
+LDAP_TLS_CERT=path
+LDAP_TLS_KEY=path
+LDAP_TLS_CA=path
+```
+
+Check out [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) docs on creating your own docker image to use inside kubernetes or which you can see an extract in the section below:
 
 https://book.kubebuilder.io/quick-start.html#run-it-on-the-cluster
 
