@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	ldapv1 "ldap-accounts-controller/api/v1"
-	ld "ldap-accounts-controller/ldap"
+	ldap "ldap-accounts-controller/ldap"
 )
 
 // LdapGroupReconciler reconciles a LdapGroup object
@@ -75,7 +75,7 @@ func (r *LdapGroupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// The object is being deleted
 		if containsString(ldapgroup.GetFinalizers(), ldapgroupFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
-			if err := ld.DeleteGroup(ldapgroup.Spec); err != nil {
+			if err := ldap.DeleteGroup(ldapgroup.Spec); err != nil {
 				log.Error(err, "Error deleting from LDAP")
 				return ctrl.Result{}, err
 			}
@@ -93,7 +93,7 @@ func (r *LdapGroupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	//! [finalizer]
 
 	log.Info("Adding or updating LDAP group")
-	err := ld.AddGroup(ldapgroup.Spec)
+	err := ldap.AddGroup(ldapgroup.Spec)
 	if err != nil {
 		log.Error(err, "cannot add group to ldap")
 	}
